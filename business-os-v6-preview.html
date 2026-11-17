@@ -1,0 +1,1047 @@
+<!DOCTYPE html>
+<html lang="en" translate="no">
+<head>
+  <meta charset="UTF-8">
+  <meta name="google" content="notranslate">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Business OS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+/* Design tokens, reset, typography. Dark theme = same tokens, new values. */
+:root {
+  --ink: #10201e; --ink-2: #1a2d2a; --ink-text: #b9c6c2;
+  --paper: #f4f5f2; --card: #ffffff; --line: #e3e6e1;
+  --text: #16211f; --muted: #66726f;
+  --brand: #0f766e; --brand-soft: #e1f1ee;
+  --bad: #d9573b; --bad-soft: #fbe9e4;
+  --warn: #a8690f; --warn-soft: #fbf0d9;
+  --radius: 14px; --radius-sm: 9px;
+  --shadow: 0 1px 2px rgba(16, 32, 30, .05);
+  --sidebar-w: 248px;
+  font-family: 'Manrope', system-ui, -apple-system, 'Segoe UI', sans-serif;
+}
+[data-theme="dark"] {
+  --ink: #0a1211; --ink-2: #15221f;
+  --paper: #0e1615; --card: #152120; --line: #243431;
+  --text: #e8efed; --muted: #8fa09c;
+  --brand: #19a396; --brand-soft: #143a36;
+  --bad: #ef7a60; --bad-soft: #3a201a;
+  --warn: #e3b04b; --warn-soft: #352a12;
+  --shadow: none; color-scheme: dark;
+}
+*, *::before, *::after { box-sizing: border-box; }
+html, body { margin: 0; }
+body { background: var(--paper); color: var(--text); font-size: 14.5px; line-height: 1.5; -webkit-font-smoothing: antialiased; }
+h1, h2, h3, p, dl, dd, ul { margin: 0; padding: 0; }
+ul { list-style: none; }
+a { color: inherit; text-decoration: none; }
+button, input, select { font: inherit; color: inherit; }
+button { cursor: pointer; }
+svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+[hidden] { display: none !important; }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition: none !important; } }
+
+</style>
+  <style>
+/* App shell: sidebar, topbar, content grid, responsive breakpoints. */
+.app { display: grid; grid-template-columns: var(--sidebar-w) minmax(0, 1fr); min-height: 100vh; }
+.main { min-width: 0; }
+.topbar { max-width: 1320px; margin: 0 auto; padding: 26px 32px 18px; display: flex; align-items: center; gap: 14px; }
+.page-head h1 { font-size: 24px; font-weight: 800; letter-spacing: -.02em; line-height: 1.2; }
+.page-head p { color: var(--muted); }
+.content { max-width: 1320px; margin: 0 auto; padding: 4px 32px 48px; display: grid; gap: 20px; outline: none; }
+.topbar .menu-btn { display: none; } /* .topbar prefix: must beat .icon-btn { display: grid } */
+
+.sidebar { position: sticky; top: 0; height: 100vh; background: var(--ink); color: var(--ink-text); display: flex; flex-direction: column; padding: 22px 14px 16px; z-index: 30; }
+.brand { display: flex; align-items: center; gap: 11px; padding: 0 10px 20px; color: #fff; }
+.brand-mark { width: 32px; height: 32px; border-radius: 9px; background: var(--brand); display: grid; place-items: center; font-weight: 800; }
+.brand-name { font-weight: 800; font-size: 17px; letter-spacing: -.01em; }
+.nav { flex: 1; overflow-y: auto; display: grid; gap: 3px; align-content: start; }
+.nav-group { margin: 16px 12px 4px; font-size: 12px; font-weight: 600; color: #7e8e8a; }
+.nav-group:first-child { margin-top: 0; }
+.nav-item { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: var(--radius-sm); font-weight: 600; transition: background .15s, color .15s; }
+.nav-item:hover { background: var(--ink-2); color: #fff; }
+.nav-item.is-active { background: var(--brand); color: #fff; }
+.workspace { display: flex; align-items: center; gap: 10px; padding: 12px 10px 0; border-top: 1px solid var(--ink-2); }
+.avatar { width: 34px; height: 34px; border-radius: 50%; background: #e8b04a; color: #10201e; display: grid; place-items: center; font-weight: 800; font-size: 12px; }
+.workspace-name { color: #fff; font-weight: 700; font-size: 13.5px; line-height: 1.2; }
+.workspace-meta { font-size: 12px; color: #7e8e8a; }
+.scrim { display: none; }
+
+.grid-kpi { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.grid-main { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: 20px; }
+.grid-three { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; }
+
+@media (max-width: 1180px) {
+  .grid-kpi { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .grid-main, .grid-three { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 900px) {
+  .app { grid-template-columns: minmax(0, 1fr); }
+  .sidebar { position: fixed; top: 0; bottom: 0; left: 0; width: var(--sidebar-w); transform: translateX(-100%); transition: transform .22s ease; }
+  .sidebar.is-open { transform: none; }
+  .scrim { display: block; position: fixed; top: 0; right: 0; bottom: 0; left: 0; background: rgba(16, 32, 30, .45); opacity: 0; pointer-events: none; transition: opacity .2s; z-index: 20; }
+  .scrim.is-visible { opacity: 1; pointer-events: auto; }
+  .topbar .menu-btn { display: grid; }
+  .topbar { padding: 18px 18px 14px; }
+  .content { padding: 4px 18px 40px; }
+}
+@media (max-width: 640px) { .grid-kpi { grid-template-columns: minmax(0, 1fr); } }
+
+/* ---- Phones, tablets, notches ---- */
+.sidebar { height: 100vh; height: 100dvh; padding-top: calc(22px + env(safe-area-inset-top, 0px)); padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px)); }
+.page-head { flex: 1; min-width: 0; }
+body.nav-open { overflow: hidden; }
+@media (max-width: 1180px) { .grid-three { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 900px) {
+  .topbar { padding-top: calc(18px + env(safe-area-inset-top, 0px)); padding-left: max(18px, env(safe-area-inset-left)); padding-right: max(18px, env(safe-area-inset-right)); }
+  .content { padding-left: max(18px, env(safe-area-inset-left)); padding-right: max(18px, env(safe-area-inset-right)); padding-bottom: calc(40px + env(safe-area-inset-bottom, 0px)); }
+  select, input[type="text"] { font-size: 16px; } /* stops iOS zooming into fields */
+  .chart-box { height: 260px; }
+}
+@media (max-width: 760px) { .grid-three { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 640px) {
+  .page-head h1 { font-size: 21px; }
+  .page-head p { font-size: 13px; }
+  .chart-box { height: 240px; }
+  .kpi-value { font-size: 26px; }
+  .card { padding: 18px; }
+}
+
+</style>
+  <style>
+/* Reusable UI parts: cards, KPIs, buttons, forms, tables, lists, tags, toast. */
+.card { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); padding: 22px; min-width: 0; }
+.card-head { margin-bottom: 14px; }
+.card h2 { font-size: 16px; font-weight: 800; letter-spacing: -.01em; }
+.card-sub { color: var(--muted); font-size: 13px; }
+
+.view-tools { display: flex; justify-content: flex-end; align-items: center; gap: 10px; }
+.btn { display: inline-flex; align-items: center; gap: 8px; padding: 9px 16px; border-radius: var(--radius-sm); border: 1px solid transparent; font-weight: 700; }
+.btn-primary { background: var(--brand); color: #fff; }
+.btn-ghost { background: var(--card); border-color: var(--line); }
+.btn-danger { background: var(--bad-soft); color: var(--bad); }
+.icon-btn { width: 38px; height: 38px; display: grid; place-items: center; border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--card); }
+select, input[type="text"] { width: 100%; padding: 9px 12px; border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--card); }
+.view-tools select { width: auto; font-weight: 600; }
+
+.kpi { padding: 20px 22px; }
+.kpi-label { color: var(--muted); font-weight: 600; font-size: 13.5px; }
+.kpi-value { font-size: 29px; font-weight: 800; letter-spacing: -.03em; line-height: 1.2; margin: 5px 0 2px; font-variant-numeric: tabular-nums; }
+.kpi-caption { color: var(--muted); font-size: 12.5px; }
+.kpi-delta { margin-top: 8px; font-size: 12.5px; font-weight: 700; color: var(--muted); }
+.kpi-delta.is-good { color: var(--brand); }
+.kpi-delta.is-bad { color: var(--bad); }
+
+.chart-box { position: relative; height: 290px; }
+.chart-box.is-small { height: 260px; }
+
+.row-list { display: grid; }
+.row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 11px 0; border-bottom: 1px solid var(--line); }
+.row:last-child { border-bottom: 0; padding-bottom: 0; }
+.row-title { font-weight: 700; }
+.row-sub { color: var(--muted); font-size: 12.5px; }
+.row-value { font-weight: 800; font-variant-numeric: tabular-nums; text-align: right; }
+
+.tag { display: inline-block; padding: 2px 10px; border-radius: 99px; background: var(--paper); font-size: 12.5px; font-weight: 700; color: var(--muted); white-space: nowrap; }
+.tag-good { background: var(--brand-soft); color: var(--brand); }
+.tag-warn { background: var(--warn-soft); color: var(--warn); }
+.tag-bad { background: var(--bad-soft); color: var(--bad); }
+
+.table-wrap { overflow-x: auto; margin: 0 -8px; }
+table { width: 100%; border-collapse: collapse; min-width: 520px; }
+th { text-align: left; font-size: 12.5px; font-weight: 600; color: var(--muted); padding: 8px; border-bottom: 1px solid var(--line); }
+td { padding: 12px 8px; border-bottom: 1px solid var(--line); }
+tbody tr:last-child td { border-bottom: 0; }
+.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+td.num { font-weight: 800; }
+
+.empty-inline { color: var(--muted); padding: 18px 0; }
+.empty-state { text-align: center; padding: 48px 20px; display: grid; gap: 10px; justify-items: center; }
+.empty-state svg { width: 34px; height: 34px; color: var(--brand); }
+.empty-state p { color: var(--muted); max-width: 52ch; }
+.planned { text-align: left; color: var(--muted); display: grid; gap: 4px; margin: 4px 0; }
+.planned li::before { content: '–'; margin-right: 8px; }
+.stub-data { font-weight: 700; color: var(--brand); }
+
+.form { display: grid; gap: 18px; max-width: 520px; }
+.field { display: grid; gap: 6px; font-weight: 700; font-size: 13.5px; }
+.field input, .field select { font-weight: 500; }
+.field small { color: var(--muted); font-weight: 500; }
+.field .error { color: var(--bad); font-weight: 600; }
+.seg { display: inline-flex; padding: 3px; background: var(--paper); border-radius: var(--radius-sm); width: fit-content; }
+.seg button { border: 0; background: none; padding: 6px 16px; border-radius: 7px; font-weight: 700; color: var(--muted); }
+.seg button.is-active { background: var(--card); color: var(--text); box-shadow: var(--shadow); }
+.settings-block { display: grid; gap: 16px; }
+.settings-block + .settings-block { border-top: 1px solid var(--line); padding-top: 22px; margin-top: 22px; }
+
+.toast { position: fixed; left: 50%; bottom: 24px; transform: translate(-50%, 20px); background: var(--ink); color: #fff; padding: 11px 18px; border-radius: 10px; font-weight: 600; opacity: 0; pointer-events: none; transition: opacity .2s, transform .2s; z-index: 100; }
+.toast.is-visible { opacity: 1; transform: translate(-50%, 0); }
+
+/* ---- Language switch, touch targets, small screens ---- */
+.lang-select { width: auto; padding: 8px 12px; font-weight: 600; }
+.view-tools select { max-width: 100%; }
+.toast { max-width: calc(100vw - 32px); text-align: center; bottom: calc(24px + env(safe-area-inset-bottom, 0px)); }
+@media (pointer: coarse) {
+  .nav-item, .btn, select, input[type="text"], .seg button { min-height: 44px; }
+  .icon-btn { width: 44px; height: 44px; }
+}
+@media (max-width: 640px) {
+  .view-tools { justify-content: stretch; }
+  .view-tools label, .view-tools select { width: 100%; }
+  .row { align-items: flex-start; }
+}
+
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar" id="sidebar" aria-label="Sidebar">
+    <div class="brand"><span class="brand-mark" aria-hidden="true">B</span><span class="brand-name">Business OS</span></div>
+    <nav class="nav" id="nav" aria-label="Main navigation"></nav>
+    <div class="workspace">
+      <span class="avatar" id="bizAvatar" aria-hidden="true"></span>
+      <div><p class="workspace-name" id="bizName"></p><p class="workspace-meta" id="bizMeta"></p></div>
+    </div>
+  </aside>
+  <div class="scrim" id="scrim"></div>
+
+  <div class="main">
+    <header class="topbar">
+      <button class="icon-btn menu-btn" id="menuBtn" aria-controls="sidebar">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+      </button>
+      <div class="page-head"><h1 id="pageTitle"></h1><p id="pageSub"></p></div>
+      <select class="lang-select" id="langSelect"></select>
+    </header>
+    <main class="content" id="view" tabindex="-1"><p class="empty-inline" id="boot">Loading…</p><noscript><p class="empty-inline">JavaScript is turned off or blocked in this viewer. Open the file in a full browser (Chrome, Safari, Edge).</p></noscript></main>
+  </div>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<!-- Load order matters: core → data → components → modules → main -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script>
+/* Shared helpers. Everything in the app hangs off one global namespace: BOS. */
+window.BOS = window.BOS || {};
+(function (B) {
+  'use strict';
+  const pad = n => String(n).padStart(2, '0');
+
+  B.$ = (sel, root = document) => root.querySelector(sel);
+  B.$$ = (sel, root = document) => [...root.querySelectorAll(sel)];
+  B.esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  B.css = name => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  B.uid = prefix => prefix + '-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+
+  const currency = () => (B.store && B.store.state && B.store.state.settings.currency) || 'USD';
+  const digits = () => (currency() === 'UZS' ? 0 : 2);
+
+  const loc = () => (B.i18n ? B.i18n.locale() : 'en-US');
+  B.fmt = {
+    iso: d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`,
+    today: () => B.fmt.iso(new Date()),
+    money: n => new Intl.NumberFormat(loc(), { style: 'currency', currency: currency(), minimumFractionDigits: 0, maximumFractionDigits: digits() }).format(n),
+    compact: n => new Intl.NumberFormat(loc(), { style: 'currency', currency: currency(), notation: 'compact', maximumFractionDigits: 1 }).format(n),
+    pct: n => `${n.toFixed(1)}%`,
+    num: n => new Intl.NumberFormat(loc()).format(n),
+    date: iso => new Date(iso + 'T00:00:00').toLocaleDateString(loc(), { month: 'short', day: 'numeric', year: 'numeric' }),
+    month: d => d.toLocaleDateString(loc(), { month: 'short' })
+  };
+})(window.BOS);
+
+</script>
+<script>
+/* Translations. English text is the key: B.t('Total Revenue') returns the text in the chosen language.
+ * To add a language: add a column here and an entry in LANGS / LOCALES. */
+(function (B) {
+  'use strict';
+  const LANGS = [['en', 'English'], ['uz', "O'zbekcha"], ['ru', 'Русский']];
+  const LOCALES = { en: 'en-US', uz: 'uz-UZ', ru: 'ru-RU' };
+
+  // [English, Uzbek, Russian]
+  const ROWS = [
+    // Shell and navigation
+    ['Demo workspace', "Demo ish maydoni", 'Демо-пространство'],
+    ['Open navigation', "Menyuni ochish", 'Открыть меню'],
+    ['Overview', "Umumiy ko'rinish", 'Обзор'],
+    ['Operations', "Operatsiyalar", 'Операции'],
+    ['Relationships', "Hamkorlar", 'Партнёры'],
+    ['Insights', "Xulosalar", 'Инсайты'],
+    ['System', "Tizim", 'Система'],
+    ['Dashboard', "Boshqaruv paneli", 'Панель управления'],
+    ['Your business at a glance', "Biznesingiz bir qarashda", 'Ваш бизнес с первого взгляда'],
+    ['Sales', "Sotuvlar", 'Продажи'],
+    ['Orders, payments and invoices', "Buyurtmalar, to'lovlar va hisob-fakturalar", 'Заказы, платежи и счета'],
+    ['Inventory', "Ombor", 'Склад'],
+    ['Stock levels and reorder alerts', "Zaxira darajasi va buyurtma ogohlantirishlari", 'Остатки и уведомления о закупке'],
+    ['Finance', "Moliya", 'Финансы'],
+    ['Expenses, cash and profit', "Xarajatlar, pul va foyda", 'Расходы, деньги и прибыль'],
+    ['Customers', "Mijozlar", 'Клиенты'],
+    ['Your clients and their orders', "Mijozlaringiz va ularning buyurtmalari", 'Ваши клиенты и их заказы'],
+    ['Suppliers', "Yetkazib beruvchilar", 'Поставщики'],
+    ['Who you buy from', "Kimdan xarid qilasiz", 'У кого вы покупаете'],
+    ['Analytics', "Tahlil", 'Аналитика'],
+    ['Trends and comparisons', "Tendensiyalar va taqqoslashlar", 'Тренды и сравнения'],
+    ['AI Assistant', "AI yordamchi", 'ИИ-ассистент'],
+    ['Simulated business insights', "Simulyatsiya qilingan biznes xulosalari", 'Имитация бизнес-аналитики'],
+    ['Settings', "Sozlamalar", 'Настройки'],
+    ['Workspace preferences', "Ish maydoni sozlamalari", 'Параметры рабочего пространства'],
+    ['Storage is full or blocked. Changes will not be saved.', "Xotira to'lgan yoki bloklangan. O'zgarishlar saqlanmaydi.", 'Хранилище заполнено или заблокировано. Изменения не сохранятся.'],
+
+    // Dashboard
+    ['Reporting period', "Hisobot davri", 'Отчётный период'],
+    ['This month', "Shu oy", 'Этот месяц'],
+    ['Last 3 months', "Oxirgi 3 oy", 'Последние 3 месяца'],
+    ['Last 6 months', "Oxirgi 6 oy", 'Последние 6 месяцев'],
+    ['Last 12 months', "Oxirgi 12 oy", 'Последние 12 месяцев'],
+    ['Key figures', "Asosiy ko'rsatkichlar", 'Ключевые показатели'],
+    ['Total Revenue', "Umumiy daromad", 'Общая выручка'],
+    ['Sales made, paid or not', "Qilingan sotuvlar, to'langan yoki to'lanmagan", 'Совершённые продажи, оплаченные или нет'],
+    ['Gross Profit', "Yalpi foyda", 'Валовая прибыль'],
+    ['Revenue − cost of goods sold', "Daromad − sotilgan tovar tannarxi", 'Выручка − себестоимость проданных товаров'],
+    ['Net Profit', "Sof foyda", 'Чистая прибыль'],
+    ['Revenue − all expenses, incl. goods sold', "Daromad − barcha xarajatlar (tannarx bilan)", 'Выручка − все расходы, включая себестоимость'],
+    ['Profit Margin', "Foyda marjasi", 'Рентабельность'],
+    ['Net profit ÷ revenue', "Sof foyda ÷ daromad", 'Чистая прибыль ÷ выручка'],
+    ['Cash Flow', "Pul oqimi", 'Денежный поток'],
+    ['Cash received − cash paid out', "Olingan pul − to'langan pul", 'Полученные деньги − выплаченные деньги'],
+    ['Inventory Value', "Ombor qiymati", 'Стоимость склада'],
+    ['Quantity × purchase price, today', "Miqdor × xarid narxi, bugun", 'Количество × закупочная цена, сегодня'],
+    ['{p}% vs previous period', "oldingi davrga nisbatan {p}%", '{p}% к предыдущему периоду'],
+    ['{p} pts vs previous period', "oldingi davrga nisbatan {p} punkt", '{p} п.п. к предыдущему периоду'],
+    ['No earlier period to compare', "Solishtirish uchun oldingi davr yo'q", 'Нет предыдущего периода для сравнения'],
+    ['In {a} · Out {b}', "Kirim {a} · Chiqim {b}", 'Приход {a} · Расход {b}'],
+    ['Not yet collected: {a}', "Hali undirilmagan: {a}", 'Ещё не получено: {a}'],
+    ['Needs restocking: {n}', "Qayta buyurtma kerak: {n} ta", 'Нужна закупка: {n}'],
+    ['All stock above reorder level', "Barcha zaxira buyurtma darajasidan yuqori", 'Все остатки выше порога закупки'],
+    ['Revenue, Expenses and Net Profit', "Daromad, xarajat va sof foyda", 'Выручка, расходы и чистая прибыль'],
+    ['By month, last 12 months', "Oylar bo'yicha, oxirgi 12 oy", 'По месяцам, последние 12 месяцев'],
+    ['Where the money goes', "Pul qayerga ketadi", 'Куда уходят деньги'],
+    ['Total expenses in the period', "Davrdagi jami xarajatlar", 'Все расходы за период'],
+    ['Restock soon', "Tez orada to'ldirish", 'Скоро пополнить'],
+    ['At or below reorder level', "Buyurtma darajasida yoki undan past", 'На уровне порога или ниже'],
+    ['Nothing to restock. Every product is above its reorder level.', "Qayta buyurtma kerak emas. Barcha mahsulotlar buyurtma darajasidan yuqori.", 'Пополнять нечего. Все товары выше порога закупки.'],
+    ['+{n} more', "yana +{n}", 'ещё +{n}'],
+    ['{q} left · reorder at {r}', "{q} ta qoldi · {r} da buyurtma", 'Осталось {q} · заказ при {r}'],
+    ['Out of stock', "Tugagan", 'Нет в наличии'],
+    ['Low stock', "Kam qolgan", 'Мало'],
+    ['Fastest selling', "Eng tez sotiladigan", 'Быстрее всего продаются'],
+    ['Units sold in the period', "Davrda sotilgan dona", 'Продано единиц за период'],
+    ['{n} units', "{n} dona", '{n} шт.'],
+    ['No sales in this period yet.', "Bu davrda hali sotuv yo'q.", 'За этот период продаж ещё нет.'],
+    ['Recent sales', "So'nggi sotuvlar", 'Последние продажи'],
+    ['Latest five orders', "Oxirgi beshta buyurtma", 'Последние пять заказов'],
+    ['No sales recorded yet.', "Hali sotuv kiritilmagan.", 'Продажи ещё не записаны.'],
+    ['Paid', "To'langan", 'Оплачено'],
+    ['Unpaid', "To'lanmagan", 'Не оплачено'],
+    ['Unknown customer', "Noma'lum mijoz", 'Неизвестный клиент'],
+    ['Net profit', "Sof foyda", 'Чистая прибыль'],
+    ['Revenue', "Daromad", 'Выручка'],
+    ['Total expenses', "Jami xarajat", 'Все расходы'],
+    ['Cost of goods sold', "Sotilgan tovar tannarxi", 'Себестоимость проданных товаров'],
+    ['Other', "Boshqa", 'Прочее'],
+    ['No expenses', "Xarajat yo'q", 'Расходов нет'],
+    ['Charts could not load. Check your internet connection.', "Grafiklar yuklanmadi. Internet aloqasini tekshiring.", 'Графики не загрузились. Проверьте интернет-соединение.'],
+    ['Rent', "Ijara", 'Аренда'],
+    ['Salaries', "Ish haqi", 'Зарплаты'],
+    ['Marketing', "Marketing", 'Маркетинг'],
+    ['Utilities', "Kommunal xizmatlar", 'Коммунальные услуги'],
+    ['Software', "Dasturlar", 'Программы'],
+    ['Insurance', "Sug'urta", 'Страховка'],
+
+    // Coming-soon modules
+    ['{name} arrives in Stage {n}', "{name} {n}-bosqichda qo'shiladi", '{name}: появится на этапе {n}'],
+    ['Record sales and watch revenue, cost of goods and stock update together.', "Sotuvlarni kiriting, daromad, tannarx va ombor birga yangilanishini kuzating.", 'Записывайте продажи: выручка, себестоимость и остатки обновляются вместе.'],
+    ['Smart Stock monitoring: see what to reorder, from whom, and how fast each product sells.', "Aqlli ombor nazorati: nimani va kimdan qayta buyurtma qilish, har bir mahsulot qanchalik tez sotilishini ko'ring.", 'Умный контроль склада: что и у кого заказать и как быстро продаётся каждый товар.'],
+    ['Track expenses and supplier payments, and keep revenue, profit and cash flow clearly apart.', "Xarajatlar va yetkazib beruvchilarga to'lovlarni kuzating, daromad, foyda va pul oqimini aniq ajrating.", 'Отслеживайте расходы и платежи поставщикам, чётко разделяя выручку, прибыль и денежный поток.'],
+    ['A simple CRM: who buys what, how much they spend and who still owes you money.', "Oddiy CRM: kim nima sotib oladi, qancha sarflaydi va kim hali qarzdor.", 'Простая CRM: кто что покупает, сколько тратит и кто ещё должен вам.'],
+    ['Keep supplier contacts, lead times and purchase history in one place.', "Yetkazib beruvchilar kontaktlari, yetkazish muddatlari va xarid tarixi bir joyda.", 'Контакты поставщиков, сроки поставки и история закупок в одном месте.'],
+    ['Deeper charts: margin by product, best customers, seasonality and cost trends.', "Chuqurroq grafiklar: mahsulotlar bo'yicha marja, eng yaxshi mijozlar, mavsumiylik va xarajat tendensiyalari.", 'Расширенные графики: маржа по товарам, лучшие клиенты, сезонность и динамика затрат.'],
+    ['Ask questions about your numbers. Answers will be written in JavaScript from your own data. No real AI model is connected.', "Raqamlaringiz haqida savol bering. Javoblar sizning ma'lumotlaringiz asosida JavaScript bilan yoziladi. Haqiqiy AI modeli ulanmagan.", 'Задавайте вопросы о ваших цифрах. Ответы формируются на JavaScript из ваших данных. Реальная ИИ-модель не подключена.'],
+    ['{n} demo sales are loaded.', "{n} ta demo sotuv yuklangan.", 'Загружено демо-продаж: {n}.'],
+    ['{n} products are loaded, {low} below reorder level.', "{n} ta mahsulot yuklangan, {low} tasi buyurtma darajasidan past.", 'Загружено товаров: {n}, ниже порога закупки: {low}.'],
+    ['{e} expenses and {p} stock purchases are loaded.', "{e} ta xarajat va {p} ta tovar xaridi yuklangan.", 'Загружено расходов: {e} и закупок: {p}.'],
+    ['{n} customers are loaded.', "{n} ta mijoz yuklangan.", 'Загружено клиентов: {n}.'],
+    ['{n} suppliers are loaded.', "{n} ta yetkazib beruvchi yuklangan.", 'Загружено поставщиков: {n}.'],
+    ['{n} sales over 12 months are ready to analyse.', "12 oylik {n} ta sotuv tahlilga tayyor.", '{n} продаж за 12 месяцев готовы к анализу.'],
+    ['Simulated answers only.', "Faqat simulyatsiya qilingan javoblar.", 'Только имитированные ответы.'],
+
+    // Settings
+    ['Business profile', "Biznes profili", 'Профиль бизнеса'],
+    ['Your name', "Ismingiz", 'Ваше имя'],
+    ['Business name', "Biznes nomi", 'Название бизнеса'],
+    ['Enter your name.', "Ismingizni kiriting.", 'Введите ваше имя.'],
+    ['Enter a business name.', "Biznes nomini kiriting.", 'Введите название бизнеса.'],
+    ['Name saved', "Ism saqlandi", 'Имя сохранено'],
+    ['Business name saved', "Biznes nomi saqlandi", 'Название сохранено'],
+    ['Currency', "Valyuta", 'Валюта'],
+    ['Display currency', "Ko'rsatiladigan valyuta", 'Валюта отображения'],
+    ['Changes how amounts are shown. Existing values are not converted.', "Summalar qanday ko'rsatilishini o'zgartiradi. Mavjud qiymatlar o'girilmaydi.", 'Меняет отображение сумм. Существующие значения не пересчитываются.'],
+    ['US dollar ($)', "AQSH dollari ($)", 'Доллар США ($)'],
+    ['Uzbek sum (UZS)', "O'zbek so'mi (UZS)", 'Узбекский сум (UZS)'],
+    ['Russian ruble (RUB)', "Rossiya rubli (RUB)", 'Российский рубль (RUB)'],
+    ['Currency updated', "Valyuta yangilandi", 'Валюта обновлена'],
+    ['Language', "Til", 'Язык'],
+    ['Interface language', "Interfeys tili", 'Язык интерфейса'],
+    ['Theme', "Mavzu", 'Тема'],
+    ['Light', "Yorug'", 'Светлая'],
+    ['Dark', "Qorong'i", 'Тёмная'],
+    ['Demo data', "Demo ma'lumot", 'Демо-данные'],
+    ['Replace everything in this workspace with the original sample business.', "Ish maydonidagi hamma narsani asl namunaviy biznes bilan almashtiradi.", 'Заменяет всё в рабочем пространстве исходным демо-бизнесом.'],
+    ['Reset demo data', "Demo ma'lumotni tiklash", 'Сбросить демо-данные'],
+    ['Replace all data with the demo data?', "Barcha ma'lumot demo ma'lumot bilan almashtirilsinmi?", 'Заменить все данные демо-данными?'],
+    ['Demo data restored', "Demo ma'lumot tiklandi", 'Демо-данные восстановлены']
+  ];
+
+  const DICT = { uz: {}, ru: {} };
+  ROWS.forEach(([en, uz, ru]) => { DICT.uz[en] = uz; DICT.ru[en] = ru; });
+
+  const detect = () => 'uz'; // default language for new workspaces; users can switch any time
+  const lang = () => {
+    const s = B.store && B.store.state && B.store.state.settings;
+    return (s && s.language) || detect();
+  };
+
+  B.i18n = { LANGS, detect, lang, locale: () => LOCALES[lang()] };
+  B.t = (key, params) => {
+    const text = (DICT[lang()] && DICT[lang()][key]) || key;
+    return params ? text.replace(/\{(\w+)\}/g, (_, k) => (params[k] !== undefined ? params[k] : '')) : text;
+  };
+})(window.BOS);
+
+</script>
+<script>
+/* Demo data generator. Seeded, so every reset gives the same realistic business. */
+(function (B) {
+  'use strict';
+  const rng = seed => () => {
+    seed |= 0; seed = (seed + 0x6d2b79f5) | 0;
+    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+
+  const SUPPLIERS = [
+    { id: 's1', name: 'Highland Green Traders', contact: 'Marta Velez', email: 'orders@highlandgreen.example', phone: '+1 555 0141', leadDays: 9 },
+    { id: 's2', name: 'Meadow Plant Foods', contact: 'Dan Okafor', email: 'sales@meadowplant.example', phone: '+1 555 0172', leadDays: 3 },
+    { id: 's3', name: 'Craft Ware Imports', contact: 'Lina Hartmann', email: 'hello@craftware.example', phone: '+1 555 0113', leadDays: 14 },
+    { id: 's4', name: 'Brewtech Equipment', contact: 'Sam Ito', email: 'trade@brewtech.example', phone: '+1 555 0199', leadDays: 12 }
+  ];
+
+  // lot = typical units per sale line. qty = current stock on hand.
+  const PRODUCTS = [
+    { id: 'p1', sku: 'COF-ETH-1K', name: 'Ethiopia Yirgacheffe 1kg', category: 'Coffee', purchasePrice: 14.5, sellPrice: 26, qty: 210, reorderLevel: 160, supplierId: 's1', lot: [8, 24] },
+    { id: 'p2', sku: 'COF-COL-1K', name: 'Colombia Supremo 1kg', category: 'Coffee', purchasePrice: 13.2, sellPrice: 24.5, qty: 70, reorderLevel: 150, supplierId: 's1', lot: [8, 22] },
+    { id: 'p3', sku: 'COF-ESP-1K', name: 'House Espresso Blend 1kg', category: 'Coffee', purchasePrice: 11.8, sellPrice: 22, qty: 320, reorderLevel: 200, supplierId: 's1', lot: [10, 30] },
+    { id: 'p4', sku: 'COF-DEC-500', name: 'Decaf Swiss Water 500g', category: 'Coffee', purchasePrice: 8.4, sellPrice: 16, qty: 40, reorderLevel: 80, supplierId: 's1', lot: [4, 14] },
+    { id: 'p5', sku: 'MLK-OAT-1L', name: 'Oat Milk 1L', category: 'Dairy alternatives', purchasePrice: 1.9, sellPrice: 3.6, qty: 900, reorderLevel: 500, supplierId: 's2', lot: [30, 90] },
+    { id: 'p6', sku: 'ACC-V60-100', name: 'V60 Paper Filters (100)', category: 'Accessories', purchasePrice: 3.2, sellPrice: 7.5, qty: 380, reorderLevel: 200, supplierId: 's3', lot: [10, 40] },
+    { id: 'p7', sku: 'WAR-MUG-01', name: 'Ceramic Mug', category: 'Merchandise', purchasePrice: 4.6, sellPrice: 12, qty: 55, reorderLevel: 160, supplierId: 's3', lot: [8, 30] },
+    { id: 'p8', sku: 'WAR-CUP-02', name: 'Reusable Travel Cup', category: 'Merchandise', purchasePrice: 6.1, sellPrice: 16, qty: 190, reorderLevel: 110, supplierId: 's3', lot: [6, 20] },
+    { id: 'p9', sku: 'EQP-GRN-01', name: 'Hand Grinder', category: 'Equipment', purchasePrice: 27, sellPrice: 59, qty: 60, reorderLevel: 35, supplierId: 's4', lot: [2, 6] },
+    { id: 'p10', sku: 'EQP-KET-01', name: 'Gooseneck Kettle', category: 'Equipment', purchasePrice: 34, sellPrice: 79, qty: 14, reorderLevel: 25, supplierId: 's4', lot: [1, 5] }
+  ];
+
+  const CUSTOMERS = [
+    { id: 'c1', name: 'Cedar & Oak Café', email: 'buy@cedaroak.example', phone: '+1 555 0201' },
+    { id: 'c2', name: 'Harbor Bakery', email: 'office@harborbakery.example', phone: '+1 555 0202' },
+    { id: 'c3', name: 'Lumen Co-working', email: 'ops@lumen.example', phone: '+1 555 0203' },
+    { id: 'c4', name: 'Pine Street Hotel', email: 'purchasing@pinestreet.example', phone: '+1 555 0204' },
+    { id: 'c5', name: 'Maple Grocers', email: 'orders@maplegrocers.example', phone: '+1 555 0205' },
+    { id: 'c6', name: 'Riverside Diner', email: 'hi@riversidediner.example', phone: '+1 555 0206' },
+    { id: 'c7', name: 'Atlas Events', email: 'events@atlas.example', phone: '+1 555 0207' },
+    { id: 'c8', name: 'Walk-in customer', email: '', phone: '' }
+  ];
+
+  function generate() {
+    const rand = rng(2026);
+    const between = (a, b) => a + rand() * (b - a);
+    const pick = arr => arr[Math.floor(rand() * arr.length)];
+    const now = new Date();
+    const iso = B.fmt.iso;
+    const products = PRODUCTS.map(p => ({ ...p }));
+    const sales = [], expenses = [], purchases = [];
+    let saleNo = 1001;
+
+    for (let back = 11; back >= 0; back--) {
+      const first = new Date(now.getFullYear(), now.getMonth() - back, 1);
+      const lastDay = back === 0 ? now.getDate() : new Date(first.getFullYear(), first.getMonth() + 1, 0).getDate();
+      const growth = 1 + (11 - back) * 0.025;
+      const at = day => iso(new Date(first.getFullYear(), first.getMonth(), day));
+      const sold = {};
+
+      const count = Math.round(between(34, 44) * growth * (lastDay / (back === 0 ? 30 : lastDay)));
+      for (let i = 0; i < count; i++) {
+        const day = 1 + Math.floor(rand() * lastDay);
+        const lines = [];
+        const chosen = new Set();
+        const lineCount = 1 + Math.floor(rand() * 3);
+        while (chosen.size < lineCount) chosen.add(pick(products));
+        chosen.forEach(p => {
+          const qty = Math.max(1, Math.round(between(p.lot[0], p.lot[1]) * growth));
+          lines.push({ productId: p.id, qty, price: p.sellPrice, cost: p.purchasePrice });
+          sold[p.id] = (sold[p.id] || 0) + qty;
+        });
+        const ageDays = (now - new Date(first.getFullYear(), first.getMonth(), day)) / 864e5;
+        const paid = ageDays > 25 ? rand() < .97 : rand() < .72;
+        sales.push({ id: 'S-' + saleNo++, date: at(day), customerId: pick(CUSTOMERS).id, items: lines, status: paid ? 'paid' : 'unpaid' });
+      }
+
+      // Supplier purchases roughly replace what was sold (cash goes out when stock is bought).
+      if (lastDay >= 2) {
+        products.forEach(p => {
+          if (sold[p.id]) purchases.push({ id: `PO-${back}-${p.id}`, date: at(2), supplierId: p.supplierId, productId: p.id, qty: Math.ceil(sold[p.id] * 1.02), unitCost: p.purchasePrice, paid: true });
+        });
+      }
+
+      const exp = (day, category, description, amount) => {
+        if (day <= lastDay) expenses.push({ id: `E-${back}-${category}`, date: at(day), category, description, amount: Math.round(amount), paid: true });
+      };
+      exp(1, 'Rent', 'Shop and storage rent', 2200);
+      exp(28, 'Salaries', 'Team salaries', 5600 + (11 - back) * 60);
+      exp(10, 'Marketing', 'Ads and promotions', between(650, 1050));
+      exp(15, 'Utilities', 'Power, water, internet', between(250, 380));
+      exp(3, 'Software', 'Subscriptions', 150);
+      exp(5, 'Insurance', 'Business insurance', 120);
+    }
+
+    return {
+      version: 1,
+      settings: { ownerName: 'Zokirov Abror', businessName: 'Northbound Coffee Co.', currency: 'USD', theme: 'light', language: B.i18n.detect() },
+      products, customers: CUSTOMERS.map(c => ({ ...c })), suppliers: SUPPLIERS.map(s => ({ ...s })),
+      sales, expenses, purchases
+    };
+  }
+
+  B.demo = { generate };
+})(window.BOS);
+
+</script>
+<script>
+/* Single source of truth. Modules read B.store.state and change it only through update(). */
+(function (B) {
+  'use strict';
+  const KEY = 'businessos.v2';
+  const listeners = new Set();
+
+  B.store = {
+    state: null,
+
+    load() {
+      try {
+        const raw = localStorage.getItem(KEY);
+        if (raw) {
+          const saved = JSON.parse(raw);
+          if (saved && saved.version === 1 && Array.isArray(saved.sales)) {
+            if (!['USD', 'UZS', 'RUB'].includes(saved.settings.currency)) saved.settings.currency = 'USD';
+            this.state = saved; return;
+          }
+        }
+      } catch (err) { /* corrupted data: fall back to demo data */ }
+      this.state = B.demo.generate();
+      this.save();
+    },
+
+    save() {
+      try { localStorage.setItem(KEY, JSON.stringify(this.state)); }
+      catch (err) { B.toast && B.toast(B.t('Storage is full or blocked. Changes will not be saved.')); }
+    },
+
+    // update(state => { ...mutate... }) saves and notifies every listener.
+    update(mutator) { mutator(this.state); this.save(); listeners.forEach(fn => fn(this.state)); },
+    reset() { const keep = this.state.settings; this.state = B.demo.generate(); this.state.settings = { ...this.state.settings, ...keep }; this.save(); listeners.forEach(fn => fn(this.state)); },
+    subscribe(fn) { listeners.add(fn); return () => listeners.delete(fn); }
+  };
+})(window.BOS);
+
+</script>
+<script>
+/* Financial formulas. Pure functions: state in, numbers out. No DOM here.
+ *
+ *  Revenue            = value of sales made in the period (paid or not)
+ *  COGS               = quantity sold × purchase cost at time of sale
+ *  Gross Profit       = Revenue − COGS
+ *  Total Expenses     = COGS + operating expenses (rent, salaries, marketing, ...)
+ *  Net Profit         = Revenue − Total Expenses  (= Gross Profit − operating expenses)
+ *  Profit Margin      = Net Profit ÷ Revenue × 100
+ *  Cash Flow          = actual cash received (paid sales) − actual cash paid out (paid expenses + paid stock purchases)
+ *  Inventory Value    = quantity on hand × purchase price
+ *
+ * Revenue, profit and cash flow differ on purpose: an unpaid sale is revenue but not cash,
+ * and a stock purchase is cash out but not an expense until the goods are sold (COGS).
+ */
+(function (B) {
+  'use strict';
+  const sum = (arr, fn) => arr.reduce((s, x) => s + fn(x), 0);
+  const saleTotal = s => sum(s.items, i => i.qty * i.price);
+  const saleCost = s => sum(s.items, i => i.qty * i.cost);
+  const between = (d, from, to) => d >= from && d <= to;
+
+  const F = {
+    saleTotal, saleCost,
+
+    // Current period of N months (calendar months incl. this one) and the equal period before it.
+    range(months, now = new Date()) {
+      const y = now.getFullYear(), m = now.getMonth(), iso = B.fmt.iso;
+      return {
+        from: iso(new Date(y, m - (months - 1), 1)), to: iso(now),
+        prevFrom: iso(new Date(y, m - (2 * months - 1), 1)), prevTo: iso(new Date(y, m - (months - 1), 0))
+      };
+    },
+
+    summary(st, from, to) {
+      const sales = st.sales.filter(s => between(s.date, from, to));
+      const expenses = st.expenses.filter(e => between(e.date, from, to));
+      const buys = st.purchases.filter(p => between(p.date, from, to));
+
+      const revenue = sum(sales, saleTotal);
+      const cogs = sum(sales, saleCost);
+      const opex = sum(expenses, e => e.amount);
+      const totalExpenses = cogs + opex;
+      const netProfit = revenue - totalExpenses;
+      const cashIn = sum(sales.filter(s => s.status === 'paid'), saleTotal);
+      const cashOut = sum(expenses.filter(e => e.paid), e => e.amount) + sum(buys.filter(p => p.paid), p => p.qty * p.unitCost);
+
+      return {
+        revenue, cogs, grossProfit: revenue - cogs, opex, totalExpenses, netProfit,
+        margin: revenue ? (netProfit / revenue) * 100 : 0,
+        cashIn, cashOut, cashFlow: cashIn - cashOut,
+        receivables: revenue - cashIn, salesCount: sales.length
+      };
+    },
+
+    change: (cur, prev) => (prev === 0 ? null : ((cur - prev) / Math.abs(prev)) * 100),
+
+    monthly(st, count = 12) {
+      const now = new Date(), rows = [];
+      for (let i = count - 1; i >= 0; i--) {
+        const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+        const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+        rows.push({ label: B.fmt.month(d), ...F.summary(st, key + '-01', key + '-31') });
+      }
+      return rows;
+    },
+
+    inventoryValue: st => sum(st.products, p => p.qty * p.purchasePrice),
+    lowStock: st => st.products.filter(p => p.qty <= p.reorderLevel).sort((a, b) => a.qty / a.reorderLevel - b.qty / b.reorderLevel),
+
+    topProducts(st, from, to, limit = 5) {
+      const map = {};
+      st.sales.filter(s => between(s.date, from, to)).forEach(s => s.items.forEach(i => {
+        const row = map[i.productId] || (map[i.productId] = { productId: i.productId, units: 0, revenue: 0 });
+        row.units += i.qty; row.revenue += i.qty * i.price;
+      }));
+      return Object.values(map).sort((a, b) => b.units - a.units).slice(0, limit)
+        .map(r => ({ ...r, name: (st.products.find(p => p.id === r.productId) || { name: 'Deleted product' }).name }));
+    },
+
+    costBreakdown(st, from, to) {
+      const s = F.summary(st, from, to), map = { 'Cost of goods sold': s.cogs };
+      st.expenses.filter(e => between(e.date, from, to)).forEach(e => { map[e.category] = (map[e.category] || 0) + e.amount; });
+      return Object.entries(map).filter(([, v]) => v > 0).sort((a, b) => b[1] - a[1]);
+    }
+  };
+  B.finance = F;
+})(window.BOS);
+
+</script>
+<script>
+/* Shared UI pieces: icons, toast, empty state, chart defaults. */
+(function (B) {
+  'use strict';
+  const ICONS = {
+    dashboard: '<rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/>',
+    sales: '<circle cx="9" cy="20" r="1.5"/><circle cx="18" cy="20" r="1.5"/><path d="M2 3h3l2.5 12h11L21 7H6"/>',
+    inventory: '<path d="M3 8l9-5 9 5-9 5zM3 8v8l9 5 9-5V8M12 13v8"/>',
+    finance: '<path d="M3 7a2 2 0 0 1 2-2h13v4"/><path d="M3 7v11a2 2 0 0 0 2 2h15V9H5a2 2 0 0 1-2-2z"/><circle cx="16.5" cy="14.5" r="1"/>',
+    customers: '<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.6-3.5 3.2-5.5 6.5-5.5s5.9 2 6.5 5.5M16 4.5a3.5 3.5 0 0 1 0 7M18 14.8c1.9.7 3.2 2.4 3.5 5.2"/>',
+    suppliers: '<path d="M2 6h11v10H2zM13 9h4l3 3v4h-7"/><circle cx="6.5" cy="18" r="1.8"/><circle cx="16.5" cy="18" r="1.8"/>',
+    analytics: '<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>',
+    assistant: '<path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8zM19 16l.8 2.2L22 19l-2.2.8L19 22l-.8-2.2L16 19l2.2-.8z"/>',
+    settings: '<path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/>'
+  };
+  B.icon = name => `<svg viewBox="0 0 24 24" aria-hidden="true">${ICONS[name] || ''}</svg>`;
+
+  let timer;
+  B.toast = message => {
+    const el = B.$('#toast');
+    el.textContent = message;
+    el.classList.add('is-visible');
+    clearTimeout(timer);
+    timer = setTimeout(() => el.classList.remove('is-visible'), 2600);
+  };
+
+  B.chartDefaults = () => {
+    Chart.defaults.font.family = "'Manrope', system-ui, sans-serif";
+    Chart.defaults.font.size = 12;
+    Chart.defaults.color = B.css('--muted');
+  };
+})(window.BOS);
+
+</script>
+<script>
+/* Hash router + sidebar. A module is { id, title, sub, icon, group, render(root), destroy?() }. */
+(function (B) {
+  'use strict';
+  const order = [];
+  B.modules = {};
+  B.register = mod => { B.modules[mod.id] = mod; order.push(mod.id); };
+
+  // Hash names are plain "bos-<id>" (letters, digits, hyphen). Hosts such as published pages
+  // only pass simple #names through, and some names (e.g. "settings") are reserved by them.
+  const PREFIX = 'bos-';
+  const idFromHash = () => { const h = location.hash.replace('#', ''); return h.indexOf(PREFIX) === 0 ? h.slice(PREFIX.length) : ''; };
+
+  B.router = {
+    current: null,
+
+    buildNav() {
+      let group = '';
+      B.$('#nav').innerHTML = order.map(id => {
+        const m = B.modules[id];
+        const label = m.group !== group ? `<p class="nav-group">${B.t(m.group)}</p>` : '';
+        group = m.group;
+        return `${label}<a class="nav-item" href="#${PREFIX}${id}" data-id="${id}">${B.icon(m.icon)}${B.t(m.title)}</a>`;
+      }).join('');
+    },
+
+    start() {
+      this.buildNav();
+      // Clicks switch the page directly; the hash is only kept in sync for back/forward and bookmarks.
+      B.$('#nav').addEventListener('click', e => {
+        const a = e.target.closest('a[data-id]');
+        if (a) { e.preventDefault(); this.navigate(a.dataset.id); }
+      });
+      window.addEventListener('hashchange', () => this.go());
+      B.store.subscribe(() => { this.buildNav(); this.show(this.current, true); });
+      this.go();
+    },
+
+    navigate(id) {
+      if (!B.modules[id]) return;
+      if (B.modules[id] !== this.current) this.show(B.modules[id], false);
+      try { if (idFromHash() !== id) location.hash = PREFIX + id; } catch (err) { /* hash not writable here: fine */ }
+    },
+
+    go() {
+      const mod = B.modules[idFromHash()];
+      if (mod) { if (mod !== this.current) this.show(mod, false); }
+      else if (!this.current) this.show(B.modules[order[0]], false);
+    },
+
+    show(mod, isRefresh) {
+      if (this.current && this.current.destroy) this.current.destroy();
+      this.current = mod;
+      B.$$('.nav-item').forEach(a => a.classList.toggle('is-active', a.dataset.id === mod.id));
+      B.$('#pageTitle').textContent = B.t(mod.title);
+      B.$('#pageSub').textContent = B.t(mod.sub);
+      document.title = `${B.t(mod.title)} · Business OS`;
+      const root = B.$('#view');
+      root.innerHTML = '';
+      try { mod.render(root); }
+      catch (err) {
+        console.error(err);
+        root.innerHTML = `<section class="card empty-state"><h2>Something went wrong</h2><p>${B.esc(err.message)}</p></section>`;
+      }
+      if (!isRefresh) { window.scrollTo({ top: 0 }); B.closeSidebar(); }
+    }
+  };
+
+  B.openSidebar = () => { B.$('#sidebar').classList.add('is-open'); B.$('#scrim').classList.add('is-visible'); document.body.classList.add('nav-open'); };
+  B.closeSidebar = () => { B.$('#sidebar').classList.remove('is-open'); B.$('#scrim').classList.remove('is-visible'); document.body.classList.remove('nav-open'); };
+})(window.BOS);
+
+</script>
+<script>
+/* Dashboard: revenue, profit and cash flow side by side, plus stock alerts and recent sales. */
+(function (B) {
+  'use strict';
+  const { esc, fmt, t, finance: F } = B;
+  const PALETTE = ['#0f766e', '#d9573b', '#3b4bd8', '#e0a526', '#7a5af8', '#2ba3c4', '#8a9490'];
+  let charts = [];
+  let months = 3;
+
+  const delta = (pct, extra = '') => pct === null
+    ? `<p class="kpi-delta">${t('No earlier period to compare')}</p>`
+    : `<p class="kpi-delta ${pct >= 0 ? 'is-good' : 'is-bad'}">${pct >= 0 ? '▲' : '▼'} ${t('{p}% vs previous period', { p: Math.abs(pct).toFixed(1) })}</p>${extra}`;
+
+  const kpi = (label, value, caption, footer) =>
+    `<article class="card kpi"><p class="kpi-label">${t(label)}</p><p class="kpi-value">${value}</p><p class="kpi-caption">${t(caption)}</p>${footer}</article>`;
+
+  const stockRow = p => `<li class="row"><div><p class="row-title">${esc(p.name)}</p>
+    <p class="row-sub">${t('{q} left · reorder at {r}', { q: fmt.num(p.qty), r: fmt.num(p.reorderLevel) })}</p></div>
+    <span class="tag ${p.qty === 0 ? 'tag-bad' : 'tag-warn'}">${t(p.qty === 0 ? 'Out of stock' : 'Low stock')}</span></li>`;
+
+  function render(root) {
+    const st = B.store.state, r = F.range(months);
+    const cur = F.summary(st, r.from, r.to), prev = F.summary(st, r.prevFrom, r.prevTo);
+    const low = F.lowStock(st), top = F.topProducts(st, r.from, r.to, 5);
+    const recent = [...st.sales].sort((a, b) => b.date.localeCompare(a.date) || b.id.localeCompare(a.id)).slice(0, 5);
+    const customer = id => (st.customers.find(c => c.id === id) || { name: t('Unknown customer') }).name;
+    const marginDiff = prev.revenue ? cur.margin - prev.margin : null;
+
+    const marginFooter = marginDiff === null ? delta(null)
+      : `<p class="kpi-delta ${marginDiff >= 0 ? 'is-good' : 'is-bad'}">${marginDiff >= 0 ? '▲' : '▼'} ${t('{p} pts vs previous period', { p: Math.abs(marginDiff).toFixed(1) })}</p>`;
+    const cashFooter = delta(F.change(cur.cashFlow, prev.cashFlow),
+      `<p class="kpi-caption">${t('In {a} · Out {b}', { a: fmt.money(cur.cashIn), b: fmt.money(cur.cashOut) })}<br>${t('Not yet collected: {a}', { a: fmt.money(cur.receivables) })}</p>`);
+
+    root.innerHTML = `
+      <div class="view-tools">
+        <label><span class="sr-only">${t('Reporting period')}</span>
+          <select id="periodSelect">
+            ${[[1, 'This month'], [3, 'Last 3 months'], [6, 'Last 6 months'], [12, 'Last 12 months']]
+              .map(([v, l]) => `<option value="${v}" ${v === months ? 'selected' : ''}>${t(l)}</option>`).join('')}
+          </select></label>
+      </div>
+
+      <section class="grid-kpi" aria-label="${t('Key figures')}">
+        ${kpi('Total Revenue', fmt.money(cur.revenue), 'Sales made, paid or not', delta(F.change(cur.revenue, prev.revenue)))}
+        ${kpi('Gross Profit', fmt.money(cur.grossProfit), 'Revenue − cost of goods sold', delta(F.change(cur.grossProfit, prev.grossProfit)))}
+        ${kpi('Net Profit', fmt.money(cur.netProfit), 'Revenue − all expenses, incl. goods sold', delta(F.change(cur.netProfit, prev.netProfit)))}
+        ${kpi('Profit Margin', fmt.pct(cur.margin), 'Net profit ÷ revenue', marginFooter)}
+        ${kpi('Cash Flow', fmt.money(cur.cashFlow), 'Cash received − cash paid out', cashFooter)}
+        ${kpi('Inventory Value', fmt.money(F.inventoryValue(st)), 'Quantity × purchase price, today',
+          `<p class="kpi-delta ${low.length ? 'is-bad' : 'is-good'}">${low.length ? t('Needs restocking: {n}', { n: low.length }) : t('All stock above reorder level')}</p>`)}
+      </section>
+
+      <section class="grid-main">
+        <article class="card">
+          <div class="card-head"><h2>${t('Revenue, Expenses and Net Profit')}</h2><p class="card-sub">${t('By month, last 12 months')}</p></div>
+          <div class="chart-box"><canvas id="trendChart" role="img" aria-label="${t('Revenue, Expenses and Net Profit')}"></canvas></div>
+        </article>
+        <article class="card">
+          <div class="card-head"><h2>${t('Where the money goes')}</h2><p class="card-sub">${t('Total expenses in the period')}</p></div>
+          <div class="chart-box"><canvas id="costChart" role="img" aria-label="${t('Where the money goes')}"></canvas></div>
+        </article>
+      </section>
+
+      <section class="grid-three">
+        <article class="card">
+          <div class="card-head"><h2>${t('Restock soon')}</h2><p class="card-sub">${t('At or below reorder level')}</p></div>
+          ${low.length ? `<ul class="row-list">${low.slice(0, 5).map(stockRow).join('')}</ul>${low.length > 5 ? `<p class="row-sub">${t('+{n} more', { n: low.length - 5 })}</p>` : ''}`
+            : `<p class="empty-inline">${t('Nothing to restock. Every product is above its reorder level.')}</p>`}
+        </article>
+        <article class="card">
+          <div class="card-head"><h2>${t('Fastest selling')}</h2><p class="card-sub">${t('Units sold in the period')}</p></div>
+          ${top.length ? `<ul class="row-list">${top.map(p => `<li class="row"><div><p class="row-title">${esc(p.name)}</p><p class="row-sub">${t('{n} units', { n: fmt.num(p.units) })}</p></div><p class="row-value">${fmt.money(p.revenue)}</p></li>`).join('')}</ul>`
+            : `<p class="empty-inline">${t('No sales in this period yet.')}</p>`}
+        </article>
+        <article class="card">
+          <div class="card-head"><h2>${t('Recent sales')}</h2><p class="card-sub">${t('Latest five orders')}</p></div>
+          ${recent.length ? `<ul class="row-list">${recent.map(s => `<li class="row"><div><p class="row-title">${esc(customer(s.customerId))}</p><p class="row-sub">${s.id} · ${fmt.date(s.date)}</p></div>
+              <div><p class="row-value">${fmt.money(F.saleTotal(s))}</p><span class="tag ${s.status === 'paid' ? 'tag-good' : 'tag-warn'}">${t(s.status === 'paid' ? 'Paid' : 'Unpaid')}</span></div></li>`).join('')}</ul>`
+            : `<p class="empty-inline">${t('No sales recorded yet.')}</p>`}
+        </article>
+      </section>`;
+
+    B.$('#periodSelect').addEventListener('change', e => { months = Number(e.target.value); B.router.show(mod, true); });
+    drawCharts(st, F.costBreakdown(st, r.from, r.to));
+  }
+
+  function drawCharts(st, costs) {
+    if (typeof Chart === 'undefined') {   // CDN blocked or offline: keep the rest of the dashboard usable
+      B.$$('.chart-box').forEach(b => { b.innerHTML = `<p class="empty-inline">${t('Charts could not load. Check your internet connection.')}</p>`; });
+      return;
+    }
+    B.chartDefaults();
+    const rows = F.monthly(st, 12);
+    const tooltip = { backgroundColor: '#10201e', padding: 10, cornerRadius: 8, callbacks: { label: c => ` ${c.dataset.label || c.label}: ${fmt.money(c.parsed.y !== undefined ? c.parsed.y : c.parsed)}` } };
+
+    charts.push(new Chart(B.$('#trendChart'), {
+      data: {
+        labels: rows.map(r => r.label),
+        datasets: [
+          { type: 'bar', label: t('Net profit'), data: rows.map(r => r.netProfit), backgroundColor: rows.map(r => (r.netProfit >= 0 ? B.css('--brand') : B.css('--bad'))), borderRadius: 5, maxBarThickness: 22, order: 2 },
+          { type: 'line', label: t('Revenue'), data: rows.map(r => r.revenue), borderColor: '#3b4bd8', tension: .35, pointRadius: 0, borderWidth: 2.5, order: 1 },
+          { type: 'line', label: t('Total expenses'), data: rows.map(r => r.totalExpenses), borderColor: '#e0a526', tension: .35, pointRadius: 0, borderWidth: 2.5, order: 1 }
+        ]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false },
+        plugins: { legend: { align: 'end', labels: { usePointStyle: true, boxWidth: 8, boxHeight: 8 } }, tooltip },
+        scales: { x: { grid: { display: false }, border: { display: false } }, y: { border: { display: false }, grid: { color: B.css('--line') }, ticks: { callback: v => fmt.compact(v), maxTicksLimit: 6 } } }
+      }
+    }));
+
+    const top = costs.slice(0, 6).map(([name, v]) => [t(name), v]);
+    const rest = costs.slice(6).reduce((s, [, v]) => s + v, 0);
+    if (rest > 0) top.push([t('Other'), rest]);
+    charts.push(new Chart(B.$('#costChart'), {
+      type: 'doughnut',
+      data: { labels: top.length ? top.map(c => c[0]) : [t('No expenses')], datasets: [{ data: top.length ? top.map(c => c[1]) : [1], backgroundColor: top.length ? PALETTE : [B.css('--line')], borderWidth: 2, borderColor: B.css('--card') }] },
+      options: { responsive: true, maintainAspectRatio: false, cutout: '64%', plugins: { legend: { position: 'bottom', labels: { usePointStyle: true, boxWidth: 8, boxHeight: 8, padding: 10 } }, tooltip } }
+    }));
+  }
+
+  const mod = {
+    id: 'dashboard', title: 'Dashboard', sub: 'Your business at a glance', icon: 'dashboard', group: 'Overview',
+    render, destroy() { charts.forEach(c => c.destroy()); charts = []; }
+  };
+  B.register(mod);
+})(window.BOS);
+
+</script>
+<script>
+/* Modules planned for later stages. Each one already appears in the navigation and
+ * shows what it will do plus how much demo data is waiting for it. */
+(function (B) {
+  'use strict';
+  const L = B.finance;
+  const defs = [
+    { id: 'sales', title: 'Sales', sub: 'Orders, payments and invoices', icon: 'sales', group: 'Operations', stage: 2,
+      text: 'Record sales and watch revenue, cost of goods and stock update together.',
+      facts: st => B.t('{n} demo sales are loaded.', { n: B.fmt.num(st.sales.length) }) },
+    { id: 'inventory', title: 'Inventory', sub: 'Stock levels and reorder alerts', icon: 'inventory', group: 'Operations', stage: 3,
+      text: 'Smart Stock monitoring: see what to reorder, from whom, and how fast each product sells.',
+      facts: st => B.t('{n} products are loaded, {low} below reorder level.', { n: st.products.length, low: L.lowStock(st).length }) },
+    { id: 'finance', title: 'Finance', sub: 'Expenses, cash and profit', icon: 'finance', group: 'Operations', stage: 2,
+      text: 'Track expenses and supplier payments, and keep revenue, profit and cash flow clearly apart.',
+      facts: st => B.t('{e} expenses and {p} stock purchases are loaded.', { e: st.expenses.length, p: st.purchases.length }) },
+    { id: 'customers', title: 'Customers', sub: 'Your clients and their orders', icon: 'customers', group: 'Relationships', stage: 4,
+      text: 'A simple CRM: who buys what, how much they spend and who still owes you money.',
+      facts: st => B.t('{n} customers are loaded.', { n: st.customers.length }) },
+    { id: 'suppliers', title: 'Suppliers', sub: 'Who you buy from', icon: 'suppliers', group: 'Relationships', stage: 4,
+      text: 'Keep supplier contacts, lead times and purchase history in one place.',
+      facts: st => B.t('{n} suppliers are loaded.', { n: st.suppliers.length }) },
+    { id: 'analytics', title: 'Analytics', sub: 'Trends and comparisons', icon: 'analytics', group: 'Insights', stage: 5,
+      text: 'Deeper charts: margin by product, best customers, seasonality and cost trends.',
+      facts: st => B.t('{n} sales over 12 months are ready to analyse.', { n: B.fmt.num(st.sales.length) }) },
+    { id: 'assistant', title: 'AI Assistant', sub: 'Simulated business insights', icon: 'assistant', group: 'Insights', stage: 5,
+      text: 'Ask questions about your numbers. Answers will be written in JavaScript from your own data. No real AI model is connected.',
+      facts: () => B.t('Simulated answers only.') }
+  ];
+
+  defs.forEach(d => B.register({
+    id: d.id, title: d.title, sub: d.sub, icon: d.icon, group: d.group,
+    render(root) {
+      root.innerHTML = `<section class="card empty-state">
+        ${B.icon(d.icon)}
+        <h2>${B.t('{name} arrives in Stage {n}', { name: B.t(d.title), n: d.stage })}</h2>
+        <p>${B.t(d.text)}</p>
+        <p class="stub-data">${d.facts(B.store.state)}</p>
+      </section>`;
+    }
+  }));
+})(window.BOS);
+
+</script>
+<script>
+/* Settings (Stage 1 subset): profile, currency, language, theme, demo data. */
+(function (B) {
+  'use strict';
+  const { t } = B;
+  const CURRENCIES = [['USD', 'US dollar ($)'], ['UZS', 'Uzbek sum (UZS)'], ['RUB', 'Russian ruble (RUB)']];
+  const option = (value, label, current) => `<option value="${value}" ${value === current ? 'selected' : ''}>${B.esc(label)}</option>`;
+
+  function render(root) {
+    const s = B.store.state.settings, lang = B.i18n.lang();
+    root.innerHTML = `<section class="card">
+      <div class="settings-block">
+        <h2>${t('Business profile')}</h2>
+        <div class="form">
+          <label class="field">${t('Your name')}
+            <input type="text" id="ownerInput" maxlength="40" value="${B.esc(s.ownerName || 'Zokirov Abror')}">
+            <span class="error" id="ownerError"></span>
+          </label>
+          <label class="field">${t('Business name')}
+            <input type="text" id="bizInput" maxlength="40" value="${B.esc(s.businessName)}">
+            <span class="error" id="bizError"></span>
+          </label>
+        </div>
+      </div>
+      <div class="settings-block">
+        <h2>${t('Language')}</h2>
+        <div class="form"><label class="field">${t('Interface language')}
+          <select id="langSetting">${B.i18n.LANGS.map(([c, n]) => option(c, n, lang)).join('')}</select></label></div>
+      </div>
+      <div class="settings-block">
+        <h2>${t('Currency')}</h2>
+        <div class="form"><label class="field">${t('Display currency')}
+          <select id="currencySelect">${CURRENCIES.map(([c, l]) => option(c, t(l), s.currency)).join('')}</select>
+          <small>${t('Changes how amounts are shown. Existing values are not converted.')}</small></label></div>
+      </div>
+      <div class="settings-block">
+        <h2>${t('Theme')}</h2>
+        <div class="seg" role="group" aria-label="${t('Theme')}">
+          <button data-theme="light" class="${s.theme === 'light' ? 'is-active' : ''}">${t('Light')}</button>
+          <button data-theme="dark" class="${s.theme === 'dark' ? 'is-active' : ''}">${t('Dark')}</button>
+        </div>
+      </div>
+      <div class="settings-block">
+        <h2>${t('Demo data')}</h2>
+        <p class="card-sub">${t('Replace everything in this workspace with the original sample business.')}</p>
+        <div><button class="btn btn-danger" id="resetBtn">${t('Reset demo data')}</button></div>
+      </div>
+    </section>`;
+
+    const saveName = (inputId, errId, field, errMsg, doneMsg) => B.$(inputId).addEventListener('change', e => {
+      const value = e.target.value.trim();
+      if (!value) { B.$(errId).textContent = t(errMsg); return; }
+      B.store.update(st => { st.settings[field] = value; });
+      B.toast(t(doneMsg));
+    });
+    saveName('#ownerInput', '#ownerError', 'ownerName', 'Enter your name.', 'Name saved');
+    saveName('#bizInput', '#bizError', 'businessName', 'Enter a business name.', 'Business name saved');
+
+    B.$('#langSetting').addEventListener('change', e => B.store.update(st => { st.settings.language = e.target.value; }));
+    B.$('#currencySelect').addEventListener('change', e => { B.store.update(st => { st.settings.currency = e.target.value; }); B.toast(t('Currency updated')); });
+    B.$$('.seg button').forEach(b => b.addEventListener('click', () => B.store.update(st => { st.settings.theme = b.dataset.theme; })));
+    B.$('#resetBtn').addEventListener('click', () => {
+      if (confirm(t('Replace all data with the demo data?'))) { B.store.reset(); B.toast(t('Demo data restored')); }
+    });
+  }
+
+  B.register({ id: 'settings', title: 'Settings', sub: 'Workspace preferences', icon: 'settings', group: 'System', render });
+})(window.BOS);
+
+</script>
+<script>
+/* Bootstrap: load data, keep the shell (theme, language, account) in sync with settings, start the router. */
+(function (B) {
+  'use strict';
+  function syncShell() {
+    const s = B.store.state.settings, lang = B.i18n.lang();
+    const owner = s.ownerName || 'Zokirov Abror';
+    document.documentElement.lang = lang;
+    document.documentElement.dataset.theme = s.theme;
+    B.$('#bizName').textContent = owner;
+    B.$('#bizAvatar').textContent = owner.split(/\s+/).slice(0, 2).map(w => w[0]).join('').toUpperCase();
+    B.$('#bizMeta').textContent = B.t('Demo workspace');
+    B.$('#menuBtn').setAttribute('aria-label', B.t('Open navigation'));
+    const sel = B.$('#langSelect');
+    sel.setAttribute('aria-label', B.t('Language'));
+    sel.innerHTML = B.i18n.LANGS.map(([c, n]) => `<option value="${c}" ${c === lang ? 'selected' : ''}>${n}</option>`).join('');
+  }
+
+  // If anything crashes before the first page is drawn, say so on screen instead of showing nothing.
+  window.addEventListener('error', e => {
+    const v = document.getElementById('view');
+    if (v && v.firstElementChild && v.firstElementChild.id === 'boot') {
+      v.innerHTML = '';
+      const p = document.createElement('p');
+      p.className = 'empty-inline';
+      p.textContent = 'Something went wrong: ' + (e.message || 'unknown error');
+      v.appendChild(p);
+    }
+  });
+
+  document.addEventListener('DOMContentLoaded', () => {
+    B.store.load();
+    syncShell();
+    B.store.subscribe(syncShell);
+    B.$('#langSelect').addEventListener('change', e => B.store.update(st => { st.settings.language = e.target.value; }));
+    B.$('#menuBtn').addEventListener('click', B.openSidebar);
+    B.$('#scrim').addEventListener('click', B.closeSidebar);
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') B.closeSidebar(); });
+    B.router.start();
+  });
+})(window.BOS);
+
+</script>
+</body>
+</html>
